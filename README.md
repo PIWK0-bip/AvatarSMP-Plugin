@@ -1,1 +1,0 @@
-# AvatarSMP-Plugin

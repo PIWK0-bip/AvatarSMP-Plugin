@@ -1,161 +1,151 @@
 package me.avatarsmp.core.update;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import me.avatarsmp.core.AvatarSMP;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.time.Duration;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-public class UpdateManager implements Listener {
+public class UpdateManager {
 
     private final AvatarSMP plugin;
-    private final String repo; // Format: "Wlasciciel/NazwaRepozytorium"
-    private final boolean autoDownload;
 
-    private String latestVersion;
-    private String downloadUrl;
+    // TODO: Zmień na swój nick i nazwę repozytorium na GitHubie
+    private static final String GITHUB_REPO = "PIWK0-bip/AvatarSMP-Plugin";
+    private static final String API_URL = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
+
     private boolean updateAvailable = false;
+    private String latestVersion = null;
+    private String downloadUrl = null;
 
     public UpdateManager(AvatarSMP plugin) {
         this.plugin = plugin;
-        this.repo = plugin.getConfig().getString("updates.github-repo", "TwojNick/AvatarSMP");
-        this.autoDownload = plugin.getConfig().getBoolean("updates.auto-download", false);
-
-        if (plugin.getConfig().getBoolean("updates.check-on-startup", true)) {
-            checkAsync();
-        }
-
-        Bukkit.getPluginManager().registerEvents(this, plugin);
+        // Sprawdzamy dostępność aktualizacji w tle przy starcie pluginu
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::checkForUpdates);
     }
 
-    public void checkAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                HttpClient client = HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(10))
-                        .build();
+    public void checkForUpdates() {
+        try {
+            HttpURLConnection connection = (HttpURLConnection) new URL(API_URL).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setRequestProperty("User-Agent", "AvatarSMP-AutoUpdater");
 
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("https://api.github.com/repos/" + repo + "/releases/latest"))
-                        .header("Accept", "application/vnd.github.v3+json")
-                        .header("User-Agent", "AvatarSMP-UpdateChecker")
-                        .GET()
-                        .build();
-
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
-                    plugin.getLogger().warning("Nie udało się sprawdzić aktualizacji (HTTP " + response.statusCode() + ").");
-                    return;
-                }
-
-                JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
-                this.latestVersion = json.get("tag_name").getAsString().replace("v", "");
-
-                String currentVersion = plugin.getDescription().getVersion();
-
-                if (!currentVersion.equalsIgnoreCase(latestVersion)) {
-                    this.updateAvailable = true;
-
-                    // Pobieranie URL do pliku .jar z assets
-                    JsonArray assets = json.getAsJsonArray("assets");
-                    for (int i = 0; i < assets.size(); i++) {
-                        JsonObject asset = assets.get(i).getAsJsonObject();
-                        if (asset.get("name").getAsString().endsWith(".jar")) {
-                            this.downloadUrl = asset.get("browser_download_url").getAsString();
-                            break;
-                        }
-                    }
-
-                    plugin.getLogger().info("Dostępna jest nowa wersja pluginu: v" + latestVersion + " (Obecna: v" + currentVersion + ")");
-
-                    if (autoDownload && downloadUrl != null) {
-                        downloadUpdate();
-                    }
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("Błąd podczas sprawdzania aktualizacji: " + e.getMessage());
+            if (connection.getResponseCode() != 200) {
+                plugin.getLogger().warning("[UpdateManager] Nie udało się sprawdzić aktualizacji. Kod odpowiedzi: " + connection.getResponseCode());
+                return;
             }
-        });
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            String json = response.toString();
+
+            this.latestVersion = extractJsonValue(json, "tag_name");
+            String currentVersion = plugin.getDescription().getVersion();
+
+            if (latestVersion != null && !currentVersion.equalsIgnoreCase(latestVersion)) {
+                this.downloadUrl = extractJarDownloadUrl(json);
+                if (this.downloadUrl != null) {
+                    this.updateAvailable = true;
+                    plugin.getLogger().info("[UpdateManager] Znaleziono nową wersję: " + latestVersion + " (Obecna: " + currentVersion + ")");
+                }
+            } else {
+                this.updateAvailable = false;
+                plugin.getLogger().info("[UpdateManager] Plugin jest aktualny (v" + currentVersion + ").");
+            }
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("[UpdateManager] Błąd podczas sprawdzania aktualizacji: " + e.getMessage());
+        }
+    }
+
+    // --- METODY WYMAGANE PRZEZ AVATARCOMMAND ---
+
+    public boolean isUpdateAvailable() {
+        return this.updateAvailable;
+    }
+
+    public String getLatestVersion() {
+        return this.latestVersion;
+    }
+
+    public String getDownloadUrl() {
+        return this.downloadUrl;
     }
 
     public boolean downloadUpdate() {
-        if (downloadUrl == null) {
+        if (!updateAvailable || downloadUrl == null) {
+            plugin.getLogger().warning("[UpdateManager] Brak dostępnej aktualizacji do pobrania.");
             return false;
         }
 
         try {
-            // Folder plugins/update jest automatycznie przetwarzany przez silnik przy restarcie
+            plugin.getLogger().info("[UpdateManager] Pobieranie aktualizacji v" + latestVersion + "...");
+
+            // Folder plugins/update/
             File updateFolder = new File(plugin.getDataFolder().getParentFile(), "update");
             if (!updateFolder.exists()) {
                 updateFolder.mkdirs();
             }
 
-            File destination = new File(updateFolder, plugin.getName() + ".jar");
+            // Używamy plugin.getName() + ".jar" zamiast protected getFile()
+            File targetFile = new File(updateFolder, plugin.getName() + ".jar");
 
-            HttpClient client = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.ALWAYS)
-                    .build();
+            HttpURLConnection connection = (HttpURLConnection) new URL(downloadUrl).openConnection();
+            connection.setRequestProperty("User-Agent", "AvatarSMP-AutoUpdater");
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(downloadUrl))
-                    .header("User-Agent", "AvatarSMP-UpdateChecker")
-                    .GET()
-                    .build();
-
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-
-            if (response.statusCode() == 200) {
-                try (InputStream in = response.body()) {
-                    Files.copy(in, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
+                 FileOutputStream fileOutputStream = new FileOutputStream(targetFile)) {
+                byte[] dataBuffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+                    fileOutputStream.write(dataBuffer, 0, bytesRead);
                 }
-                plugin.getLogger().info("Pomyślnie pobrano nową wersję (" + latestVersion + "). Zostanie załadowana po restarcie serwera!");
-                return true;
             }
+
+            plugin.getLogger().info("[UpdateManager] Pobrano wersję " + latestVersion + "! Zostanie zaaplikowana po restarcie serwera.");
+            return true;
+
         } catch (Exception e) {
-            plugin.getLogger().severe("Błąd podczas pobierania aktualizacji: " + e.getMessage());
+            plugin.getLogger().severe("[UpdateManager] Błąd podczas pobierania pliku aktualizacji: " + e.getMessage());
+            return false;
         }
-        return false;
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    // Pomocnicze parsowanie prostego JSONa
+    private String extractJsonValue(String json, String key) {
+        String searchKey = "\"" + key + "\":\"";
+        int start = json.indexOf(searchKey);
+        if (start == -1) return null;
+        start += searchKey.length();
+        int end = json.indexOf("\"", start);
+        return (end != -1) ? json.substring(start, end) : null;
+    }
 
-        // Sprawdzamy czy gracz jest operatorem / posiada uprawnienie admina
-        if (player.hasPermission("avatarsmp.admin") && updateAvailable) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendMessage(AvatarSMP.MM.deserialize(""));
-                player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>[AvatarSMP] <yellow>Dostępna jest nowa wersja pluginu! <white>v" + latestVersion));
-                if (autoDownload) {
-                    player.sendMessage(AvatarSMP.MM.deserialize("<green>Nowa wersja została pobrana i załaduje się po restarcie serwera."));
-                } else {
-                    player.sendMessage(AvatarSMP.MM.deserialize("<gray>Wpisz <yellow>/avatar update<gray>, aby pobrać ją automatycznie."));
+    private String extractJarDownloadUrl(String json) {
+        String searchKey = "\"browser_download_url\":\"";
+        int start = 0;
+        while ((start = json.indexOf(searchKey, start)) != -1) {
+            start += searchKey.length();
+            int end = json.indexOf("\"", start);
+            if (end != -1) {
+                String url = json.substring(start, end);
+                if (url.endsWith(".jar")) {
+                    return url;
                 }
-                player.sendMessage(AvatarSMP.MM.deserialize(""));
-            }, 40L); // Opóźnienie 2s po wejściu na serwer
+            }
         }
-    }
-
-    public boolean isUpdateAvailable() {
-        return updateAvailable;
-    }
-
-    public String getLatestVersion() {
-        return latestVersion;
+        return null;
     }
 }
