@@ -1,0 +1,10 @@
+debug: false
+
+energy:
+  max: 100.0
+  regen-per-second: 4.0
+
+updates:
+  check-on-startup: true
+  auto-download: false
+  github-repo: "TwojNick/AvatarSMP"
