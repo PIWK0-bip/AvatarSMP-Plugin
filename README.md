@@ -54,6 +54,7 @@ Change language in `config.yml`:
 ```yaml
 # Supported out-of-the-box: "pl", "en"
 language: "en"
+```
 
 ## 📄 License
 
