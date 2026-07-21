@@ -1,5 +1,5 @@
 name: AvatarSMP
-version: '1.0.1'
+version: '1.0.2'
 main: me.avatarsmp.core.AvatarSMP
 api-version: '1.21'
 author: Skripted | PIWK0__

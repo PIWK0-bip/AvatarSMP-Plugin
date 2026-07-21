@@ -346,20 +346,29 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
     private void addXp(PlayerData data, Player player, int amount) {
         data.setXp(data.getXp() + amount);
         int nextLevel = data.getLevel() + 1;
+        boolean leveledTo50 = false;
         while (data.getXp() >= cumulativeXpForLevel(nextLevel)) {
             data.setLevel(nextLevel);
-            player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>Awans! <white>Osiągnąłeś poziom " + data.getLevel() + "!"));
+            player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>Awans! <white>Osiągnięto poziom " + data.getLevel() + "!"));
             player.showTitle(Title.title(
                     AvatarSMP.MM.deserialize("<gold><bold>AWANS!"),
                     AvatarSMP.MM.deserialize("<white>Poziom " + data.getLevel())));
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-            if (data.getLevel() >= 50 && data.getSpecialization() == Specialization.NONE
-                    && data.getElement() != Element.WARRIOR) {
-                SpecializationGUI.open(player, data.getElement());
+
+            if (data.getLevel() == 50 && data.getSpecialization() == Specialization.NONE && data.getElement() != Element.WARRIOR) {
+                leveledTo50 = true;
             }
             nextLevel = data.getLevel() + 1;
         }
-    }
+
+// Otwieramy GUI bezpiecznie po zakończeniu tiku obrażeń
+        if (leveledTo50) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (player.isOnline()) {
+            SpecializationGUI.open(player, data.getElement());
+                }
+            });
+        }
 
     private LivingEntity getTargetEntity(Player player, double range) {
         World world = player.getWorld();

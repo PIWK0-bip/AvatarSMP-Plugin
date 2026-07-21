@@ -56,25 +56,15 @@ public class InteractionListener implements Listener {
     public void tick() {
         long now = System.currentTimeMillis();
         this.activeStreams.removeIf(stream -> stream.expiry() < now);
-        if (this.activeStreams.isEmpty()) {
-            return;
-        }
+        if (this.activeStreams.isEmpty()) return;
 
-        for (World world : plugin.getServer().getWorlds()) {
-            for (Entity entity : world.getEntitiesByClass(SmallFireball.class)) {
-                Location fireballLoc = entity.getLocation();
-                boolean extinguished = false;
-                for (WaterStream stream : this.activeStreams) {
-                    for (Location point : stream.points()) {
-                        if (point.getWorld().equals(fireballLoc.getWorld()) && point.distance(fireballLoc) < 1.5) {
-                            fireballLoc.getWorld().spawnParticle(Particle.SMOKE, fireballLoc, 15, 0.3, 0.3, 0.3, 0.05);
-                            entity.remove();
-                            extinguished = true;
-                            break;
-                        }
-                    }
-                    if (extinguished) {
-                        break;
+        for (WaterStream stream : this.activeStreams) {
+            for (Location point : stream.points()) {
+                if (point.getWorld() == null) continue;
+                for (Entity entity : point.getWorld().getNearbyEntities(point, 1.5, 1.5, 1.5)) {
+                    if (entity instanceof SmallFireball) {
+                        point.getWorld().spawnParticle(Particle.SMOKE, entity.getLocation(), 15, 0.3, 0.3, 0.3, 0.05);
+                        entity.remove();
                     }
                 }
             }

@@ -25,7 +25,7 @@ public class ScoreboardTask extends BukkitRunnable implements Listener {
         }
         this.started = true;
         Bukkit.getPluginManager().registerEvents(this, this.plugin);
-        runTaskTimer(this.plugin, 10L, 2L);
+        runTaskTimer(this.plugin, 20L, 20L); // Odświeżanie co 1 sekundę zamiast 10 razy na sekundę
     }
 
     @Override

@@ -25,7 +25,7 @@ public class ExpBarManager {
                 tick();
             }
         };
-        this.task.runTaskTimer(this.plugin, 5L, 2L);
+        this.task.runTaskTimer(this.plugin, 10L, 5L); // Odświeżanie co 0.25s
     }
 
     public void tick() {
