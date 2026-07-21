@@ -57,6 +57,6 @@ language: "en"
 
 ## 📄 License
 
-Copyright © 2026 **[Twój Nick]**. All Rights Reserved.
+Copyright © 2026 **PIWK0__bip**. All Rights Reserved.
 
 This project is proprietary software. You are **not** permitted to redistribute, modify, re-upload, or sell any part of this plugin (source code or compiled `.jar` files) without explicit written permission from the author.
