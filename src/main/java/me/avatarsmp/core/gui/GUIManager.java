@@ -4,7 +4,7 @@ import com.cryptomorin.xseries.XSound;
 import me.avatarsmp.core.AbilityRegistry;
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.DataManager;
-import me.avatarsmp.core.PlayerData;
+import me.avatarsmp.core.data.PlayerData;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -29,6 +29,21 @@ public class GUIManager implements Listener {
     public GUIManager(AvatarSMP plugin, DataManager dataManager) {
         this.plugin = plugin;
         this.dataManager = dataManager;
+    }
+
+    public void openMainGUI(Player player, PlayerData data) {
+        // data.getElement() zwraca obiekt typu Element, sprawdzamy czy jest null
+        if (data.getElement() == null) {
+            openElementGUI(player, data);
+        } else {
+            // SkillsGUI.open oczekuje DataManager
+            SkillsGUI.open(player, plugin.getDataManager());
+        }
+    }
+
+    public void openElementGUI(Player player, PlayerData data) {
+        // ElementSelectionGUI przyjmuje tylko gracza
+        ElementSelectionGUI.open(player);
     }
 
     public void openBindGUI(Player player, PlayerData data) {

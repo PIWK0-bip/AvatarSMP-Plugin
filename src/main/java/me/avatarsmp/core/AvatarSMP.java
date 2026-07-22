@@ -5,8 +5,9 @@ import me.avatarsmp.core.gui.ElementSelectionGUI;
 import me.avatarsmp.core.gui.GUIListener;
 import me.avatarsmp.core.gui.GUIManager;
 import me.avatarsmp.core.gui.SkillsGUI;
-import me.avatarsmp.core.skill.EarthBoulderSkill; // Dostosuj pakiet, jeśli klasa jest bezpośrednio w me.avatarsmp.core.skills
+import me.avatarsmp.core.skill.EarthBoulderSkill;
 import me.avatarsmp.core.update.UpdateManager;
+import me.avatarsmp.core.data.PlayerData;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -41,6 +42,7 @@ public class AvatarSMP extends JavaPlugin implements Listener {
     private ExpBarManager expBarManager;
     private GUIManager guiManager;
     private UpdateManager updateManager;
+    private LanguageManager languageManager;
 
     @Override
     public void onEnable() {
@@ -59,6 +61,7 @@ public class AvatarSMP extends JavaPlugin implements Listener {
         this.expBarManager = new ExpBarManager(this);
         this.guiManager = new GUIManager(this, this.dataManager);
         this.updateManager = new UpdateManager(this);
+        this.languageManager = new LanguageManager(this);
 
         this.bendingManager.setInteractionListener(this.interactionListener);
         this.bendingManager.setEnvironmentalListener(this.environmentalListener);
@@ -70,64 +73,87 @@ public class AvatarSMP extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(new ChiBlockListener(this, this.dataManager), this);
         Bukkit.getPluginManager().registerEvents(this.interactionListener, this);
         Bukkit.getPluginManager().registerEvents(this.environmentalListener, this);
-        Bukkit.getPluginManager().registerEvents(new GUIListener(this.dataManager, this.guiManager), this);
+        Bukkit.getPluginManager().registerEvents(new GUIListener(this, this.dataManager, this.guiManager), this);
         Bukkit.getPluginManager().registerEvents(this.guiManager, this);
         Bukkit.getPluginManager().registerEvents(new XpListener(this, this.dataManager), this);
 
         // Rejestracja komendy /avatar oraz jej TabCompletera
-        AvatarCommand avatarCommand = new AvatarCommand(this);
-        if (getCommand("avatar") != null) {
-            getCommand("avatar").setExecutor(avatarCommand);
-            getCommand("avatar").setTabCompleter(avatarCommand);
-        }
+            AvatarCommand avatarCommand = new AvatarCommand(this);
+            if (getCommand("avatar") != null) {
+                getCommand("avatar").setExecutor(avatarCommand);
+                getCommand("avatar").setTabCompleter(avatarCommand);
+            }
 
         // Ładowanie danych graczy online (np. w przypadku przeładowania pluginu)
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            this.dataManager.loadAsync(player.getUniqueId());
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                this.dataManager.loadAsync(player.getUniqueId());
+            }
+
+            getLogger().info("AvatarSMP włączony!");
+        
+            getServer().getPluginManager().registerEvents(new PlayerJoinListener(this.dataManager), this);
+
+
+
+    // 2. Rejestracja komendy /avatar oraz /a, /av wraz z TabCompleterem
+            AvatarCommand avatarCmd = new AvatarCommand(this);
+            var command = getCommand("avatar");
+            if (command != null) {
+                command.setExecutor(avatarCmd);
+                command.setTabCompleter(avatarCmd);
+            } else {
+                getLogger().severe("Nie udalo sie zarejestrowac komendy /avatar! Sprawdz plugin.yml.");
+            }
+
         }
-
-        getLogger().info("AvatarSMP włączony!");
-    }
-
-    public void debug(String message) {
-        if (getConfig().getBoolean("debug", false)) {
-            getLogger().info("[DEBUG] " + message);
+        
+        public void debug(String message) {
+            if (getConfig().getBoolean("debug", false)) {
+                getLogger().info("[DEBUG] " + message);
+            }
         }
-    }
-
+        
     // --- GETTERY ---
 
-    public DataManager getDataManager() {
-        return this.dataManager;
-    }
+        public DataManager getDataManager() {
+            return this.dataManager;
+        }
 
-    public CooldownManager getCooldownManager() {
-        return this.cooldownManager;
-    }
+        public CooldownManager getCooldownManager() {
+            return this.cooldownManager;
+        }
 
-    public ComboManager getComboManager() {
-        return this.comboManager;
-    }
+        public ComboManager getComboManager() {
+            return this.comboManager;
+        }
 
-    public BendingManager getBendingManager() {
-        return this.bendingManager;
-    }
+        public BendingManager getBendingManager() {
+            return this.bendingManager;
+        }
 
-    public EnergyManager getEnergyManager() {
-        return this.energyManager;
-    }
+        public EnergyManager getEnergyManager() {
+            return this.energyManager;
+        }
 
-    public ScoreboardManager getScoreboardManager() {
-        return this.scoreboardManager;
-    }
+        public ScoreboardManager getScoreboardManager() {
+            return this.scoreboardManager;
+        }
 
-    public ExpBarManager getExpBarManager() {
-        return this.expBarManager;
-    }
+        public ExpBarManager getExpBarManager() {
+            return this.expBarManager;
+        }
 
-    public UpdateManager getUpdateManager() {
-        return this.updateManager;
-    }
+        public GUIManager getGuiManager() {
+            return this.guiManager;
+        }
+
+        public UpdateManager getUpdateManager() {
+            return this.updateManager;
+        }
+
+        public LanguageManager getLanguageManager() {
+            return this.languageManager;
+        }
 
     @Override
     public void onDisable() {

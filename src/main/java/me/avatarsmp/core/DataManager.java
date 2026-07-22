@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class DataManager {
 
     private final AvatarSMP plugin;

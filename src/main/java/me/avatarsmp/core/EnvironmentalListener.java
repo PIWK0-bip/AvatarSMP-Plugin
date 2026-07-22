@@ -24,6 +24,8 @@ import org.bukkit.util.Vector;
 import java.util.EnumSet;
 import java.util.Set;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class EnvironmentalListener implements Listener {
 
     private static final Set<Material> NATURAL_GROUND = EnumSet.of(Material.GRASS_BLOCK, Material.DIRT, Material.STONE);

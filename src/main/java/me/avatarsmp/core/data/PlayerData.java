@@ -1,15 +1,11 @@
-package me.avatarsmp.core;
+package me.avatarsmp.core.data;
 
-import lombok.Getter;
-import lombok.Setter;
-
+import me.avatarsmp.core.Element;
+import me.avatarsmp.core.Specialization;
 import java.util.Arrays;
 import java.util.UUID;
 
-@Getter
-@Setter
 public class PlayerData {
-
     private final UUID uuid;
     private Element element = Element.NONE;
     private int level = 1;
@@ -18,7 +14,7 @@ public class PlayerData {
     private boolean chiBlocked = false;
     private boolean doubleJumpAvailable = true;
     private long avatarStateCooldownUntil = 0L;
-
+    
     /**
      * Maps ability index (0-7) -> hotbar slot (0-8) the ability is bound to, or -1 if unbound.
      * Default binds abilities 0-7 to hotbar slots 0-7 (hotbar slot index 8 / "9" stays free).
@@ -37,6 +33,28 @@ public class PlayerData {
         return bindings;
     }
 
+    // --- GETTERY ---
+    public UUID getUuid() { return uuid; }
+    public Element getElement() { return element; }
+    public int getLevel() { return level; }
+    public int getXp() { return xp; }
+    public Specialization getSpecialization() { return specialization; }
+    public boolean isChiBlocked() { return chiBlocked; }
+    public boolean isDoubleJumpAvailable() { return doubleJumpAvailable; }
+    public long getAvatarStateCooldownUntil() { return avatarStateCooldownUntil; }
+    public int[] getAbilitySlots() { return abilitySlots; }
+
+    // --- SETTERY ---
+    public void setElement(Element element) { this.element = element; }
+    public void setLevel(int level) { this.level = level; }
+    public void setXp(int xp) { this.xp = xp; }
+    public void setSpecialization(Specialization specialization) { this.specialization = specialization; }
+    public void setChiBlocked(boolean chiBlocked) { this.chiBlocked = chiBlocked; }
+    public void setDoubleJumpAvailable(boolean doubleJumpAvailable) { this.doubleJumpAvailable = doubleJumpAvailable; }
+    public void setAvatarStateCooldownUntil(long avatarStateCooldownUntil) { this.avatarStateCooldownUntil = avatarStateCooldownUntil; }
+    public void setAbilitySlots(int[] abilitySlots) { this.abilitySlots = abilitySlots; }
+
+    // --- METODY LOGICZNE ---
     public int getAbilitySlot(int abilityIndex) {
         if (abilityIndex < 0 || abilityIndex >= this.abilitySlots.length) {
             return -1;
@@ -67,6 +85,10 @@ public class PlayerData {
 
     public void resetBindings() {
         this.abilitySlots = defaultBindings();
+    }
+
+    public void removeElement() {
+        this.element = Element.NONE; 
     }
 
     @Override

@@ -5,6 +5,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
+import me.avatarsmp.core.data.PlayerData;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ChiBlockListener implements Listener {

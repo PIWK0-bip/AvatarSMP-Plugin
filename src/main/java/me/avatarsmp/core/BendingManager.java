@@ -1,6 +1,8 @@
 package me.avatarsmp.core;
 
+import org.bukkit.Bukkit; // <-- Dodaj ten import
 import me.avatarsmp.core.gui.SpecializationGUI;
+import me.avatarsmp.core.data.PlayerData;
 import me.avatarsmp.core.skill.EarthBoulderSkill;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
@@ -9,16 +11,16 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -161,13 +163,21 @@ public boolean activateSkill(Player player, int slot, String trigger, LivingEnti
         return false;
     }
 
+    // 1. Zmiana: Dynamiczne pobieranie cooldownu z configu (z użyciem metody omówionej wcześniej)
+    int cdTime = cooldownSecondsFor(data.getElement(), slot);
+
     if (this.cooldownManager.isOnCooldown(uuid, slot)) {
-        int cdTime = (data.getElement() == Element.WATER && slot == 3) ? 15 : cooldownSeconds(slot);
+        // Usunięto zhardcodowane 15 sekund dla wody, używamy pobranego cdTime
         this.cooldownManager.sendCooldownActionbar(player, slot, cdTime);
         return false;
     }
 
-    double energyCost = (slot == 7) ? 40.0 : 10.0;
+    // 2. Zmiana: Dynamiczne pobieranie kosztu energii (zamiast sztywnego 40.0 lub 10.0)
+    // Tworzy ścieżkę np: elements.WATER.energy.3
+    double defaultEnergy = (slot == 7) ? 40.0 : 10.0; 
+    String energyPath = "elements." + data.getElement().name() + ".energy." + slot;
+    double energyCost = this.plugin.getConfig().getDouble(energyPath, defaultEnergy);
+
     if (this.energyManager != null && !this.energyManager.consume(uuid, energyCost)) {
         player.sendActionBar(AvatarSMP.MM.deserialize("<dark_purple>Za mało energii Chi!"));
         return false;
@@ -184,12 +194,14 @@ public boolean activateSkill(Player player, int slot, String trigger, LivingEnti
 
     if (!success) {
         if (this.energyManager != null) {
-            this.energyManager.consume(uuid, -energyCost);
+            this.energyManager.consume(uuid, -energyCost); // Zwrócenie energii
         }
         return false;
     }
 
-    this.cooldownManager.setCooldown(uuid, slot, cooldownSeconds(slot));
+    // 3. Zmiana: Ustawienie cooldownu używając wartości z configu
+    this.cooldownManager.setCooldown(uuid, slot, cdTime);
+    
     playElementSound(player, data.getElement());
     this.dataManager.saveAsync(data);
 
@@ -316,8 +328,10 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
         return slot == 7 ? 60 : 5 + (slot * 2);
     }
 
-    public int cooldownSecondsFor(int slot) {
-        return cooldownSeconds(slot);
+    public int cooldownSecondsFor(Element element, int slot) {
+        if (element == null || element == Element.NONE) return 5;
+        String path = "elements." + element.name() + ".cooldowns." + slot;
+        return plugin.getConfig().getInt(path, 5); // To poprawnie czyta config!
     }
 
     public void grantXp(Player player, int amount) {
@@ -329,6 +343,8 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
         this.dataManager.saveAsync(data);
     }
 
+    public static final int MAX_LEVEL = 50;
+
     public int xpRequiredForNextLevel(int level) {
         return cumulativeXpForLevel(level + 1);
     }
@@ -339,15 +355,29 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
             case 2 -> 100;
             case 3 -> 250;
             case 4 -> 500;
-            default -> (int) Math.round(500 * Math.pow(1.7, level - 4));
+            default -> {
+                double xp = 500 * Math.pow(1.7, level - 4);
+            // Zabezpieczenie przed przepełnieniem Integer.MAX_VALUE
+                if (xp >= Integer.MAX_VALUE || Double.isNaN(xp)) {
+                    yield Integer.MAX_VALUE;
+                }
+                yield (int) Math.round(xp);
+            }
         };
     }
 
     private void addXp(PlayerData data, Player player, int amount) {
+    // Jeśli gracz ma już maksymalny poziom, nie dodajemy więcej XP
+        if (data.getLevel() >= MAX_LEVEL) {
+            return;
+        }
+
         data.setXp(data.getXp() + amount);
         int nextLevel = data.getLevel() + 1;
         boolean leveledTo50 = false;
-        while (data.getXp() >= cumulativeXpForLevel(nextLevel)) {
+
+    // Dodano ograniczenie data.getLevel() < MAX_LEVEL
+        while (data.getLevel() < MAX_LEVEL && data.getXp() >= cumulativeXpForLevel(nextLevel)) {
             data.setLevel(nextLevel);
             player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>Awans! <white>Osiągnięto poziom " + data.getLevel() + "!"));
             player.showTitle(Title.title(
@@ -355,21 +385,21 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
                     AvatarSMP.MM.deserialize("<white>Poziom " + data.getLevel())));
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
-            if (data.getLevel() == 50 && data.getSpecialization() == Specialization.NONE && data.getElement() != Element.WARRIOR) {
+            if (data.getLevel() == MAX_LEVEL && data.getSpecialization() == Specialization.NONE && data.getElement() != Element.WARRIOR) {
                 leveledTo50 = true;
             }
             nextLevel = data.getLevel() + 1;
         }
 
-// Otwieramy GUI bezpiecznie po zakończeniu tiku obrażeń
         if (leveledTo50) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (player.isOnline()) {
-            SpecializationGUI.open(player, data.getElement());
+                    SpecializationGUI.open(player, data.getElement());
                 }
             });
         }
-
+    }
+    
     private LivingEntity getTargetEntity(Player player, double range) {
         World world = player.getWorld();
         RayTraceResult result = world.rayTraceEntities(player.getEyeLocation(), player.getEyeLocation().getDirection(),
@@ -518,7 +548,7 @@ private boolean waterAbility(Player player, int slot, PlayerData data) {
                 if (this.cooldownManager.isOnCooldown(player.getUniqueId(), slot)) {
                     return false;
                 }
-                this.cooldownManager.setCooldown(player.getUniqueId(), slot, 15);
+                this.cooldownManager.setCooldown(player.getUniqueId(), slot, cooldownSecondsFor(Element.WATER, slot));
 
     // 3. Efekt wizualny podświetlenia celu
                 target.setGlowing(true);
@@ -905,6 +935,34 @@ private boolean waterAbility(Player player, int slot, PlayerData data) {
                 if (originalBlocks.containsKey(b)) {
                     b.setType(Material.WATER, false); // false = woda stacjonarna, nie rozlewa się
                 }
+            }
+        }
+    }
+
+    // ==========================================
+    // Akcje wykonywane po wyborze żywiołu
+    // ==========================================
+    public void executeOnSelectActions(Player player, Element element) {
+        List<String> actions = plugin.getConfig().getStringList("elements." + element.name() + ".on-select");
+
+        for (String action : actions) {
+            String formattedAction = action.replace("%player%", player.getName());
+
+            if (formattedAction.startsWith("[CONSOLE] ")) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), formattedAction.substring(10));
+            } else if (formattedAction.startsWith("[PLAYER] ")) {
+                player.performCommand(formattedAction.substring(9));
+            } else if (formattedAction.startsWith("[MESSAGE] ")) {
+                player.sendMessage(AvatarSMP.MM.deserialize(formattedAction.substring(10)));
+            } else if (formattedAction.startsWith("[TITLE] ")) {
+                String[] parts = formattedAction.substring(8).split("<subtitle>");
+                String title = parts[0];
+                String subtitle = parts.length > 1 ? parts[1] : "";
+
+                player.showTitle(Title.title(
+                    AvatarSMP.MM.deserialize(title),
+                    AvatarSMP.MM.deserialize(subtitle)
+                ));
             }
         }
     }

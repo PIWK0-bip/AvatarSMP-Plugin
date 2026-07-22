@@ -6,7 +6,7 @@ import com.cryptomorin.xseries.XMaterial;
 import me.avatarsmp.core.AbilityRegistry;
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.Element;
-import me.avatarsmp.core.PlayerData;
+import me.avatarsmp.core.data.PlayerData;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

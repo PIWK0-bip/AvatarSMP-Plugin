@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class EnergyManager {
 
     private final AvatarSMP plugin;
@@ -16,6 +18,7 @@ public class EnergyManager {
     private final Map<UUID, BossBar> bossBars = new ConcurrentHashMap<>();
     private double maxEnergy;
     private double regenPerSecond;
+    private String bossBarTitle; // Dodano zmienną przechowującą tytuł
     private BukkitRunnable task;
 
     public EnergyManager(AvatarSMP plugin) {
@@ -27,6 +30,8 @@ public class EnergyManager {
     public void reload() {
         this.maxEnergy = this.plugin.getConfig().getDouble("energy.max", 100.0);
         this.regenPerSecond = this.plugin.getConfig().getDouble("energy.regen-per-second", 4.0);
+        // Pobieranie tytułu paska z configu (z zachowaniem domyślnego wyglądu w razie braku wpisu)
+        this.bossBarTitle = this.plugin.getConfig().getString("energy.bossbar-title", "<gradient:#00c3ff:#8e2de2>⚡ Chakra</gradient>");
     }
 
     private void start() {
@@ -56,11 +61,15 @@ public class EnergyManager {
 
     private void updateBossBar(Player player, double current) {
         BossBar bar = this.bossBars.computeIfAbsent(player.getUniqueId(), k -> {
-            BossBar newBar = BossBar.bossBar(AvatarSMP.MM.deserialize("<gradient:#00c3ff:#8e2de2>⚡ Chakra</gradient>"),
+            BossBar newBar = BossBar.bossBar(AvatarSMP.MM.deserialize(this.bossBarTitle),
                     1.0f, BossBar.Color.BLUE, BossBar.Overlay.NOTCHED_10);
             player.showBossBar(newBar);
             return newBar;
         });
+
+        // Aktualizowanie nazwy w locie (wymagane, by po wpisaniu /avatar reload stary pasek zmienił nazwę)
+        bar.name(AvatarSMP.MM.deserialize(this.bossBarTitle));
+
         float progress = (float) Math.max(0.0, Math.min(1.0, current / this.maxEnergy));
         bar.progress(progress);
         bar.color(progress < 0.3f ? BossBar.Color.RED : progress < 0.6f ? BossBar.Color.YELLOW : BossBar.Color.BLUE);

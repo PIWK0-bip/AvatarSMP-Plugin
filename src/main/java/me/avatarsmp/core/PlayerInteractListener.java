@@ -9,6 +9,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class PlayerInteractListener implements Listener {
 
     private final AvatarSMP plugin;

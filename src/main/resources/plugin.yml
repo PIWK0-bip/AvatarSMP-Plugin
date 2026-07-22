@@ -1,20 +1,27 @@
 name: AvatarSMP
-version: '1.0.2'
+version: '0.0.4'
 main: me.avatarsmp.core.AvatarSMP
 api-version: '1.21'
 author: Skripted | PIWK0__
 description: Bending powers plugin for AvatarSMP.
+
 commands:
   start:
-    description: Wybierz swoją ścieżkę bendingu.
+    description: Choose your bending path.
     usage: /start
+    permission: avatarsmp.player
+    permission-message: "<red>You do not have permission to use this command!</red>"
   avatar:
-    description: Zarządzanie mocami Avatara.
+    description: Manage your Avatar bending abilities.
     usage: /avatar help
+    aliases: [a, av]
+    permission: avatarsmp.player
+    permission-message: "<red>You do not have permission to use this command!</red>"
+
 permissions:
   avatarsmp.admin:
-    description: Pozwala zarządzać mocami graczy i aktywować Stan Avatara.
+    description: Allows managing player abilities and activating Avatar State.
     default: op
   avatarsmp.player:
-    description: Pozwala korzystać z podstawowych komend /avatar.
+    description: Allows access to basic /avatar commands.
     default: true

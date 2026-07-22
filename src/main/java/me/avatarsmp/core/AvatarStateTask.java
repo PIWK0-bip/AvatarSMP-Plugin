@@ -9,6 +9,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class AvatarStateTask extends BukkitRunnable {
 
     private final AvatarSMP plugin;

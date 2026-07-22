@@ -2,8 +2,8 @@ package me.avatarsmp.core;
 
 public enum Element {
     NONE,
-    WATER,
     FIRE,
+    WATER,
     EARTH,
     AIR,
     WARRIOR

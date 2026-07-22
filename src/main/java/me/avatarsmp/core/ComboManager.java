@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class ComboManager {
 
     public enum ActionType {

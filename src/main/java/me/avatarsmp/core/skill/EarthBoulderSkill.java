@@ -5,7 +5,7 @@ import com.cryptomorin.xseries.XSound;
 import com.cryptomorin.xseries.particles.XParticle;
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.ISkill;
-import me.avatarsmp.core.PlayerData;
+import me.avatarsmp.core.data.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;

@@ -2,7 +2,7 @@ package me.avatarsmp.core.skill;
 
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.ISkill;
-import me.avatarsmp.core.PlayerData;
+import me.avatarsmp.core.data.PlayerData;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;

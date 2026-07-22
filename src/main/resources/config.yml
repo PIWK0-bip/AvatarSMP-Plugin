@@ -1,5 +1,11 @@
-debug: false
+# ====================================================
+#              AvatarSMP - Configuration
+# ====================================================
 
+# Wybór języka wiadomości (pl, en)
+language: "pl"
+
+# Ustawienia energii / chakry
 energy:
   max: 100.0
   regen-per-second: 4.0
@@ -7,4 +13,87 @@ energy:
 updates:
   check-on-startup: true
   auto-download: false
-  github-repo: "TwojNick/AvatarSMP"
+  github-repo: "PIWK0-bip/AvatarSMP-Plugin"
+
+# ====================================================
+#               Konfiguracja Scoreboardu
+# ====================================================
+scoreboard:
+  enabled: true
+  title: "<b><color:#00e1ff>  AVATAR SMP  "
+  # Dostępne placeholder-e: %element%, %skills%
+  lines:
+    - " "
+    - "<gray>Żywioł: %element%"
+    - "  "
+    - "%skills%"
+    - "   "
+
+# ====================================================
+#      Konfiguracja Żywiołów, Cooldownów i Akcji
+# ====================================================
+elements:
+  FIRE:
+    cooldowns:
+      0: 5   # Ognisty Cios
+      1: 7   # Ognisty Podmuch
+      2: 10  # Ognista Osłona
+      3: 12  # Falisty Ogień
+      4: 15  # Kombustia
+      5: 18  # Ognisty Słup
+      6: 25  # Inferno
+      7: 60  # Płomienna Nowa / Błyskawica
+    # Komendy i akcje wykonywane przy wyborze mocy
+    # Prefiksy: [CONSOLE], [PLAYER], [TITLE], [MESSAGE]
+    on-select:
+      - "[CONSOLE] give %player% blaze_powder 1"
+      - "[MESSAGE] <red>Posiadłeś potęgę płomieni!"
+      - "[TITLE] <red><bold>OGIEŃ!<subtitle><gray>Stałeś się Magiem Ognia"
+
+  WATER:
+    cooldowns:
+      0: 4   # Płynny Krąg
+      1: 8   # Wodna Bariera
+      2: 12  # Skupienie Fali
+      3: 15  # Lodowa Pułapka
+      4: 60  # Tsunami
+      5: 14  # Przypływ
+      6: 18  # Forma Ośmiornicy
+      7: 60  # Wodna Furia / Magia Krwi
+    on-select:
+      - "[CONSOLE] give %player% water_bucket 1"
+      - "[MESSAGE] <aqua>Czysta woda płynie w Twoich żyłach!"
+      - "[TITLE] <aqua><bold>WODA!<subtitle><gray>Stałeś się Magiem Wody"
+
+  EARTH:
+    cooldowns:
+      0: 5   # Rzut Kamieniem
+      1: 7   # Kamienny Grot
+      2: 12  # Kamienna Zbroja
+      3: 15  # Kamienna Ściana
+      4: 20  # Trzęsienie Ziemi
+      5: 18  # Ruchome Piaski
+      6: 25  # Głaz
+      7: 60  # Kamienna Furia / Magia Metalu
+    on-select:
+      - "[MESSAGE] <green>Twardy jak skała!"
+      - "[TITLE] <green><bold>ZIEMIA!<subtitle><gray>Stałeś się Magiem Ziemi"
+
+  AIR:
+    cooldowns:
+      0: 3   # Podmuch Powietrza
+      1: 5   # Uderzenie Powietrza
+      2: 8   # Osłona Powietrza
+      3: 10  # Zasysanie Powietrza
+      4: 20  # Tornado
+      5: 15  # Podryw
+      6: 22  # Wodospad Powietrza
+      7: 60  # Huragan / Lot
+    on-select:
+      - "[MESSAGE] <white>Lekki jak wiatr!"
+      - "[TITLE] <white><bold>POWIETRZE!<subtitle><gray>Stałeś się Magiem Powietrza"
+
+  WARRIOR:
+    on-select:
+      - "[MESSAGE] <gray>Odrzuciłeś magię na rzecz sztuki walki Chi!"
+      - "[TITLE] <gray><bold>WOJOWNIK!<subtitle><gray>Zostałeś Chi Blockerem"

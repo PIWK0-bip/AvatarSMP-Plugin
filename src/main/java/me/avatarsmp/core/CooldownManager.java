@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class CooldownManager {
 
     private final AvatarSMP plugin;

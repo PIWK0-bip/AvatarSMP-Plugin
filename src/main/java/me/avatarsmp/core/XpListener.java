@@ -5,6 +5,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class XpListener implements Listener {
 
     private final AvatarSMP plugin;

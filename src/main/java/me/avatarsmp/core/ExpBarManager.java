@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import me.avatarsmp.core.data.PlayerData;
+
 public class ExpBarManager {
 
     private final AvatarSMP plugin;
@@ -49,7 +51,7 @@ public class ExpBarManager {
             boolean onCooldown = this.plugin.getCooldownManager().isOnCooldown(uuid, abilityIndex);
             if (onCooldown) {
                 long remaining = this.plugin.getCooldownManager().getRemainingMillis(uuid, abilityIndex);
-                int total = this.plugin.getBendingManager().cooldownSecondsFor(abilityIndex);
+                int total = this.plugin.getBendingManager().cooldownSecondsFor(data.getElement(), abilityIndex);
                 float progress = total <= 0 ? 1.0f : (float) Math.max(0.0, Math.min(1.0, 1.0 - (remaining / (double) (total * 1000L))));
                 player.setExp(progress);
                 player.setLevel(abilityIndex + 1);
