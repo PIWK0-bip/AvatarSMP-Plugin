@@ -34,8 +34,7 @@
 ## 📜 Commands & Permissions
 
 | Command | Description | Permission | Default |
-| :--- | :--- | :--- |
-| `/avatar help` | Displays available subcommands | `avatarsmp.use` | Everyone |
+| :--- | :--- | :--- | :--- |
 | `/avatar menu` | Open the main AvatarSMP menu | `avatarsmp.use` | Everyone |
 | `/avatar help` | View available command options | `avatarsmp.use` | Everyone |
 | `/avatar bind` | It allows you to bind abilities to different slots | `avatarsmp.use` | Everyone |
@@ -44,7 +43,6 @@
 | `/avatar admin reload` | Reload configuration files (Admin) | `avatarsmp.admin` | OP |
 | `/avatar admin xp add/reset/set` | It allows you to manage the player's XP and level | `avatarsmp.admin` | OP |
 | `/avatar admin update` | It allows you to check for and automatically download updates | `avatarsmp.admin` | OP |
-| `/avatar admin reload` | Reloads plugin configurations | `avatarsmp.admin` | OP |
 
 ---
 
