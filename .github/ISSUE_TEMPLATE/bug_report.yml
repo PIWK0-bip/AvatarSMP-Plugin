@@ -1,0 +1,55 @@
+name: 🐛 Bug Report
+description: Report a bug or issue with AvatarSMP
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        Please provide as much information as possible to help us fix it.
+
+  - type: input
+    id: server_version
+    attributes:
+      label: Server Version & Software
+      description: What server software and version are you running?
+      placeholder: e.g., Paper 1.20.4, Purpur 1.20.2
+    validations:
+      required: true
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin Version
+      description: What version of AvatarSMP are you using?
+      placeholder: e.g., v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Use ability '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Errors / Stacktrace
+      description: Please paste any console errors or stacktraces here.
+      render: text
