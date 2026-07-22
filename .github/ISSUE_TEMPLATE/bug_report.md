@@ -1,8 +1,8 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+name: 🐛 Bug report
+about: Create a report to help us improve AvatarSMP
+title: '[BUG] '
+labels: bug
 assignees: ''
 
 ---
@@ -12,27 +12,18 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1. Use ability or command '...'
+2. Do action '....'
+3. See error in-game or in console.
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Server Environment (please complete the following information):**
+ - Server Software & Version: [e.g. Paper 1.20.4, Purpur 1.20.2]
+ - Java Version: [e.g. Java 17, Java 21]
+ - Plugin Version: [e.g. AvatarSMP v1.0.0]
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+**Console Errors / Stacktrace**
+```text
+Paste any error stacktraces or console logs here.
