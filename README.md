@@ -34,14 +34,18 @@
 ## 📜 Commands & Permissions
 
 | Command | Description | Permission | Default |
-| :--- | :--- | :--- | :--- |
-| `/avatar` | Opens the main Avatar element selection GUI | `avatarsmp.use` | Everyone |
-| `/avatar bind` | Opens the ability binding menu | `avatarsmp.bind` | Everyone |
-| `/avatar admin reload` | Reloads `config.yml` and language files | `avatarsmp.admin` | OP |
-| `/avatar admin setxp <player> <amount>` | Sets a player's bending XP | `avatarsmp.admin` | OP |
-| `/avatar admin addxp <player> <amount>` | Adds bending XP to a player | `avatarsmp.admin` | OP |
-| `/avatar admin resetxp <player>` | Resets a player's XP and level | `avatarsmp.admin` | OP |
-| `/avatar admin revoke <player>` | Strips all elemental powers and resets progress | `avatarsmp.admin` | OP |
+| :--- | :--- | :--- |
+| `/avatar help` | Displays available subcommands | `avatarsmp.use` | Everyone |
+| `/start` | Open the main AvatarSMP menu | `avatarsmp.use` | Everyone |
+| `/avatar menu` | Open the main AvatarSMP menu | `avatarsmp.use` | Everyone |
+| `/avatar help` | View available command options | `avatarsmp.use` | Everyone |
+| `/avatar bind` | It allows you to bind abilities to different slots | `avatarsmp.use` | Everyone |
+| `/avatar skills` | It allows you to view your skills, their descriptions, and how to use them | `avatarsmp.use` | Everyone |
+| `/avatar admin revoke` | Allows you to take a power from another player | `avatarsmp.admin` | OP |
+| `/avatar admin reload` | Reload configuration files (Admin) | `avatarsmp.admin` | OP |
+| `/avatar admin xp add/reset/set` | It allows you to manage the player's XP and level | `avatarsmp.admin` | OP |
+| `/avatar admin update` | It allows you to check for and automatically download updates | `avatarsmp.admin` | OP |
+| `/avatar admin reload` | Reloads plugin configurations | `avatarsmp.admin` | OP |
 
 ---
 
