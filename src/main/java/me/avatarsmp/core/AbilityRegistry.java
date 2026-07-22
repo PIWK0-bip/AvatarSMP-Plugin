@@ -14,7 +14,7 @@ public final class AbilityRegistry {
 
     public static final String[] WATER_NAMES = {
             "Płynny Krąg", "Wodna Bariera", "Skupienie Fali", "Lodowa Pułapka",
-            "Tsunami", "Przypływ", "Forma Ośmiornicy", "Wodna Furia"
+            "Tsunami", "Krąg Uzdrawiania", "Lodowe Sople", "Fala Ślizgowa"
     };
 
     public static final String[] EARTH_NAMES = {

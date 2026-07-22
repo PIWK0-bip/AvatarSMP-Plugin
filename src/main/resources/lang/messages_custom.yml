@@ -1,0 +1,15 @@
+# ====================================================
+#   AvatarSMP — Custom Messages Override
+# ====================================================
+# This file overrides ANY language file (en, pl, es, de, fr, etc.)
+# Copy any key from your language file below and change the value.
+# Empty file = no overrides = use the selected language normally.
+#
+# Example:
+#   prefix: "<gold><bold>[MyServer]</bold></gold> "
+#   no-permission: "<red>Nope!</red>"
+#
+# All MiniMessage formatting is supported.
+# ====================================================
+
+# (empty — leave blank to use the selected language file)

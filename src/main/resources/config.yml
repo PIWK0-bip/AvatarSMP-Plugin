@@ -2,8 +2,10 @@
 #              AvatarSMP - Configuration
 # ====================================================
 
-# Wybór języka wiadomości (pl, en)
-language: "pl"
+# Wybór języka wiadomości
+# Dostępne: pl, en, es, de, fr, zh, ru, pt, ja, ko, tr, uk, ar
+# Aby dostosować treść, edytuj messages_custom.yml w folderze pluginu
+language: "en"
 
 # Ustawienia energii / chakry
 energy:
@@ -42,7 +44,7 @@ elements:
       4: 15  # Kombustia
       5: 18  # Ognisty Słup
       6: 25  # Inferno
-      7: 60  # Płomienna Nowa / Błyskawica
+      7: 60  # Płomienna Nowa
     # Komendy i akcje wykonywane przy wyborze mocy
     # Prefiksy: [CONSOLE], [PLAYER], [TITLE], [MESSAGE]
     on-select:
@@ -57,9 +59,9 @@ elements:
       2: 12  # Skupienie Fali
       3: 15  # Lodowa Pułapka
       4: 60  # Tsunami
-      5: 14  # Przypływ
-      6: 18  # Forma Ośmiornicy
-      7: 60  # Wodna Furia / Magia Krwi
+      5: 14  # Krąg Uzdrawiania
+      6: 18  # Lodowe Sople
+      7: 60  # Wodna Fala Ślizgowa
     on-select:
       - "[CONSOLE] give %player% water_bucket 1"
       - "[MESSAGE] <aqua>Czysta woda płynie w Twoich żyłach!"
@@ -74,7 +76,7 @@ elements:
       4: 20  # Trzęsienie Ziemi
       5: 18  # Ruchome Piaski
       6: 25  # Głaz
-      7: 60  # Kamienna Furia / Magia Metalu
+      7: 60  # Kamienna Furia
     on-select:
       - "[MESSAGE] <green>Twardy jak skała!"
       - "[TITLE] <green><bold>ZIEMIA!<subtitle><gray>Stałeś się Magiem Ziemi"
@@ -88,7 +90,7 @@ elements:
       4: 20  # Tornado
       5: 15  # Podryw
       6: 22  # Wodospad Powietrza
-      7: 60  # Huragan / Lot
+      7: 60  # Huragan
     on-select:
       - "[MESSAGE] <white>Lekki jak wiatr!"
       - "[TITLE] <white><bold>POWIETRZE!<subtitle><gray>Stałeś się Magiem Powietrza"

@@ -3,6 +3,8 @@ package me.avatarsmp.core;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -43,22 +45,22 @@ public class DataManager {
         PlayerData data = new PlayerData(uuid);
         if (file.exists()) {
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        
             String elementName = config.getString("element", "NONE");
-            String specName = config.getString("specialization", "NONE");
             try {
                 data.setElement(Element.valueOf(elementName));
             } catch (IllegalArgumentException ex) {
                 data.setElement(Element.NONE);
             }
-            try {
-                data.setSpecialization(Specialization.valueOf(specName));
-            } catch (IllegalArgumentException ex) {
-                data.setSpecialization(Specialization.NONE);
-            }
-            data.setLevel(Math.max(1, config.getInt("level", 1)));
-            data.setXp(Math.max(0, config.getInt("xp", 0)));
+
+            int rawLevel = config.getInt("level", 1);
+            int rawXp = config.getInt("xp", 0);
+
+            data.setLevel(Math.min(BendingManager.MAX_LEVEL, Math.max(1, rawLevel)));
+            data.setXp(Math.max(0, rawXp));
             data.setChiBlocked(false);
-            java.util.List<Integer> savedBindings = config.getIntegerList("abilitySlots");
+
+            List<Integer> savedBindings = config.getIntegerList("abilitySlots");
             if (savedBindings.size() == 8) {
                 int[] bindings = new int[8];
                 for (int i = 0; i < 8; i++) {
@@ -81,16 +83,18 @@ public class DataManager {
     private void writeToDisk(PlayerData data) {
         File file = new File(this.userDataFolder, data.getUuid().toString() + ".yml");
         YamlConfiguration config = new YamlConfiguration();
+    
         config.set("uuid", data.getUuid().toString());
         config.set("element", data.getElement().name());
         config.set("level", data.getLevel());
         config.set("xp", data.getXp());
-        config.set("specialization", data.getSpecialization().name());
-        java.util.List<Integer> bindings = new java.util.ArrayList<>();
+
+        List<Integer> bindings = new ArrayList<>();
         for (int slot : data.getAbilitySlots()) {
             bindings.add(slot);
         }
         config.set("abilitySlots", bindings);
+
         try {
             config.save(file);
         } catch (Exception ex) {

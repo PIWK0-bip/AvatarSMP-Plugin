@@ -1,7 +1,6 @@
 package me.avatarsmp.core;
 
-import org.bukkit.Bukkit; // <-- Dodaj ten import
-import me.avatarsmp.core.gui.SpecializationGUI;
+import org.bukkit.Bukkit;
 import me.avatarsmp.core.data.PlayerData;
 import me.avatarsmp.core.skill.EarthBoulderSkill;
 import net.kyori.adventure.text.Component;
@@ -37,9 +36,12 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.avatarsmp.core.skill.task.WaterSphereTask;
-import me.avatarsmp.core.skill.FluidCircleSkill;
-import me.avatarsmp.core.skill.WaterBarrierSkill;
-import me.avatarsmp.core.skill.WaveFocusSkill;
+import me.avatarsmp.core.skill.water.FluidCircleSkill;
+import me.avatarsmp.core.skill.water.WaterBarrierSkill;
+import me.avatarsmp.core.skill.water.WaveFocusSkill;
+import me.avatarsmp.core.skill.water.HealingWatersSkill;
+import me.avatarsmp.core.skill.water.IceShardsSkill;
+import me.avatarsmp.core.skill.water.WaterSpoutSkill;
 
 public class BendingManager {
 
@@ -346,57 +348,43 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
     public static final int MAX_LEVEL = 50;
 
     public int xpRequiredForNextLevel(int level) {
+        if (level >= MAX_LEVEL) {
+            return cumulativeXpForLevel(MAX_LEVEL);
+        }
         return cumulativeXpForLevel(level + 1);
     }
 
-    private int cumulativeXpForLevel(int level) {
-        return switch (level) {
-            case 1 -> 0;
-            case 2 -> 100;
-            case 3 -> 250;
-            case 4 -> 500;
-            default -> {
-                double xp = 500 * Math.pow(1.7, level - 4);
-            // Zabezpieczenie przed przepełnieniem Integer.MAX_VALUE
-                if (xp >= Integer.MAX_VALUE || Double.isNaN(xp)) {
-                    yield Integer.MAX_VALUE;
-                }
-                yield (int) Math.round(xp);
-            }
-        };
+    public int cumulativeXpForLevel(int level) {
+        if (level <= 1) return 0;
+        if (level > MAX_LEVEL) level = MAX_LEVEL;
+    
+        int l = level - 1;
+        return (50 * l * l) + (100 * l);
     }
 
     private void addXp(PlayerData data, Player player, int amount) {
-    // Jeśli gracz ma już maksymalny poziom, nie dodajemy więcej XP
         if (data.getLevel() >= MAX_LEVEL) {
+            data.setLevel(MAX_LEVEL);
+            data.setXp(cumulativeXpForLevel(MAX_LEVEL));
             return;
         }
-
         data.setXp(data.getXp() + amount);
         int nextLevel = data.getLevel() + 1;
-        boolean leveledTo50 = false;
-
-    // Dodano ograniczenie data.getLevel() < MAX_LEVEL
+        
+        // Dodano ograniczenie data.getLevel() < MAX_LEVEL
         while (data.getLevel() < MAX_LEVEL && data.getXp() >= cumulativeXpForLevel(nextLevel)) {
             data.setLevel(nextLevel);
-            player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>Awans! <white>Osiągnięto poziom " + data.getLevel() + "!"));
+            
+            player.sendMessage(AvatarSMP.MM.deserialize("<gold><bold>Awans! <white>Osi to poziom " + data.getLevel() + "!"));
             player.showTitle(Title.title(
                     AvatarSMP.MM.deserialize("<gold><bold>AWANS!"),
                     AvatarSMP.MM.deserialize("<white>Poziom " + data.getLevel())));
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-
-            if (data.getLevel() == MAX_LEVEL && data.getSpecialization() == Specialization.NONE && data.getElement() != Element.WARRIOR) {
-                leveledTo50 = true;
+            
+            if (data.getLevel() == MAX_LEVEL) {
+                data.setXp(cumulativeXpForLevel(MAX_LEVEL));
             }
             nextLevel = data.getLevel() + 1;
-        }
-
-        if (leveledTo50) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (player.isOnline()) {
-                    SpecializationGUI.open(player, data.getElement());
-                }
-            });
         }
     }
     
@@ -410,12 +398,12 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
         return result.getHitEntity() instanceof LivingEntity living ? living : null;
     }
 
-    private void damage(Player caster, LivingEntity target, double amount) {
+    public void damage(Player caster, LivingEntity target, double amount) {
         target.setHealth(Math.max(0.0, target.getHealth() - amount));
         if (!(target instanceof Player)) {
             PlayerData casterData = this.dataManager.getData(caster.getUniqueId());
             if (casterData != null) {
-                addXp(casterData, caster, 5);
+                addXp(casterData, caster, 2);
             }
         }
     }
@@ -495,28 +483,19 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
                 player.sendMessage(AvatarSMP.MM.deserialize("<red><bold>Inferno!"));
             }
             case 7 -> {
-                if (data.getSpecialization() == Specialization.LIGHTNING) {
-                    LivingEntity target = getTargetEntity(player, 20);
-                    if (target == null) {
-                        return false;
+                Location loc = player.getLocation();
+                for (Entity entity : loc.getWorld().getNearbyEntities(loc, 8, 5, 8)) {
+                    if (entity instanceof LivingEntity living && entity != player) {
+                        damage(player, living, 14 * multiplier);
+                        living.setFireTicks(140);
+                        Vector push = living.getLocation().toVector().subtract(loc.toVector()).normalize().setY(0.4);
+                        living.setVelocity(push.multiply(1.6));
                     }
-                    target.getWorld().strikeLightning(target.getLocation());
-                    player.sendMessage(AvatarSMP.MM.deserialize("<yellow><bold>Błyskawica!"));
-                } else {
-                    Location loc = player.getLocation();
-                    for (Entity entity : loc.getWorld().getNearbyEntities(loc, 8, 5, 8)) {
-                        if (entity instanceof LivingEntity living && entity != player) {
-                            damage(player, living, 14 * multiplier);
-                            living.setFireTicks(140);
-                            Vector push = living.getLocation().toVector().subtract(loc.toVector()).normalize().setY(0.4);
-                            living.setVelocity(push.multiply(1.6));
-                        }
-                    }
-                    loc.getWorld().spawnParticle(Particle.FLAME, loc, 100, 4, 2, 4, 0.15);
-                    loc.getWorld().spawnParticle(Particle.LARGE_SMOKE, loc, 40, 3, 2, 3, 0.1);
-                    player.playSound(loc, Sound.BLOCK_LAVA_POP, 1.5f, 0.8f);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<red><bold>Płomienna Nowa!"));
                 }
+                loc.getWorld().spawnParticle(Particle.FLAME, loc, 100, 4, 2, 4, 0.15);
+                loc.getWorld().spawnParticle(Particle.LARGE_SMOKE, loc, 40, 3, 2, 3, 0.1);
+                player.playSound(loc, Sound.BLOCK_LAVA_POP, 1.5f, 0.8f);
+                player.sendMessage(AvatarSMP.MM.deserialize("<red><bold>Płomienna Nowa!"));
             }
             default -> {
                 return false;
@@ -526,148 +505,112 @@ private boolean executeWaterTrap(Player player, PlayerData data, LivingEntity di
     }
 
 private boolean waterAbility(Player player, int slot, PlayerData data) {
-        double waterMultiplier = this.environmentalListener != null ? this.environmentalListener.getWaterDamageMultiplier(player) : 1.0;
-        switch (slot) {
-            case 0 -> {
-                return new FluidCircleSkill(this.plugin).execute(player, data);
+    double waterMultiplier = this.environmentalListener != null ? this.environmentalListener.getWaterDamageMultiplier(player) : 1.0;
+    switch (slot) {
+        case 0 -> {
+            return new FluidCircleSkill(this.plugin).execute(player, data);
+        }
+        case 1 -> {
+            return new WaterBarrierSkill(this.plugin).execute(player, data);
+        }
+        case 2 -> {
+            return new WaveFocusSkill(this.plugin, waterMultiplier).execute(player, data);
+        }
+        case 3 -> {
+            // 1. Pobieramy cel uderzenia (wymagany kontakt fizyczny - max 3 bloki)
+            LivingEntity target = getTargetEntity(player, 3);
+            if (target == null) {
+                return false; // Brak celu w zasięgu uderzenia
             }
-            case 1 -> {
-                return new WaterBarrierSkill(this.plugin).execute(player, data);
-            }
-            case 2 -> {
-                return new WaveFocusSkill(this.plugin, waterMultiplier).execute(player, data);
-            }
-            case 3 -> {
-    // 1. Pobieramy cel uderzenia (wymagany kontakt fizyczny - max 3 bloki)
-                LivingEntity target = getTargetEntity(player, 3);
-                if (target == null) {
-                    return false; // Brak celu w zasięgu uderzenia
-                }
 
-    // 2. Cooldown 15 sekund
-                if (this.cooldownManager.isOnCooldown(player.getUniqueId(), slot)) {
-                    return false;
-                }
-                this.cooldownManager.setCooldown(player.getUniqueId(), slot, cooldownSecondsFor(Element.WATER, slot));
-
-    // 3. Efekt wizualny podświetlenia celu
-                target.setGlowing(true);
-                Location targetLoc = target.getLocation().getBlock().getLocation();
-                Map<Block, BlockData> originalBlocks = new HashMap<>();
-
-    // Zbiór bloków 3x3x3 wokół uderzonego bytu
-                for (int x = -1; x <= 1; x++) {
-                    for (int y = 0; y <= 2; y++) {
-                        for (int z = -1; z <= 1; z++) {
-                            Block b = targetLoc.clone().add(x, y, z).getBlock();
-                            if (b.isPassable() || b.getType().isAir()) {
-                                originalBlocks.putIfAbsent(b, b.getBlockData());
-                            }
-                        }
-                    }
-                }
-
-                player.sendMessage(AvatarSMP.MM.deserialize("<aqua>Lodowa Pułapka aktywowana!"));
-                Material[] iceTypes = {Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE};
-
-                new BukkitRunnable() {
-                    int ticks = 0;
-
-                    @Override
-                    public void run() {
-            // --- ANIMACJA ROŚNIĘCIA WODY (0-5s) ---
-            // Warstwa 1: Stopy (y = 0) - natychmiast przy uderzeniu
-                        if (ticks == 0) {
-                            spawnWaterLayer(targetLoc, 0, originalBlocks);
-                        }
-            // Warstwa 2: Klatka (y = 1) - po 0.3s (6 ticków)
-                        if (ticks == 6) {
-                            spawnWaterLayer(targetLoc, 1, originalBlocks);
-                        }
-            // Warstwa 3: Głowa (y = 2) - po 0.6s (12 ticków)
-                        if (ticks == 12) {
-                            spawnWaterLayer(targetLoc, 2, originalBlocks);
-                        }
-
-            // Unieruchomienie celu w miejscu na cały czas trwania pułapki (8 sekund = 160 ticków)
-                        if (ticks <= 160) {
-                            target.teleport(targetLoc.clone().add(0.5, 0, 0.5));
-                        }
-
-            // --- ZAMRAŻANIE (Po 5 sekundach = 100 ticków) ---
-                        if (ticks == 100) {
-                            for (Block b : originalBlocks.keySet()) {
-                                Material randomIce = iceTypes[java.util.concurrent.ThreadLocalRandom.current().nextInt(iceTypes.length)];
-                                b.setType(randomIce, false);
-                            }
-                        }
-
-            // --- OBRAŻENIA PODCZAS ZAMROŻENIA (Trwają przez 3 sekundy: od 100 do 160 ticków) ---
-                        if (ticks >= 100 && ticks <= 160 && ticks % 10 == 0) {
-                            damage(player, target, 1.25 * waterMultiplier);
-                        }
-
-                        ticks++;
-
-            // --- SPRZĄTANIE (Po 8 sekundach) ---
-                        if (ticks > 160) {
-                            for (Map.Entry<Block, BlockData> entry : originalBlocks.entrySet()) {
-                                entry.getKey().setBlockData(entry.getValue(), false);
-                            }
-                            target.setGlowing(false);
-                            cancel();
-                        }
-                    }
-                }.runTaskTimer(plugin, 0L, 1L);
-            }
-            case 4 -> {
-                return new me.avatarsmp.core.skill.TsunamiSkill(this.plugin).execute(player, data);
-            }
-            case 5 -> {
-                Location loc = player.getLocation();
-                for (Entity entity : loc.getWorld().getNearbyEntities(loc, 5, 3, 5)) {
-                    if (entity instanceof LivingEntity living && entity != player) {
-                        damage(player, living, 6 * waterMultiplier);
-                        Vector push = living.getLocation().toVector().subtract(loc.toVector()).normalize().setY(0.3);
-                        living.setVelocity(push.multiply(1.5));
-                    }
-                }
-                spawnWave(loc, 3);
-                player.sendMessage(AvatarSMP.MM.deserialize("<aqua>Przypływ!"));
-            }
-            case 6 -> {
-                Location loc = player.getLocation();
-                int hits = 0;
-                for (Entity entity : loc.getWorld().getNearbyEntities(loc, 6, 4, 6)) {
-                    if (entity instanceof LivingEntity living && entity != player && hits < 5) {
-                        damage(player, living, 5 * waterMultiplier);
-                        hits++;
-                    }
-                }
-                player.sendMessage(AvatarSMP.MM.deserialize("<aqua>Forma Ośmiornicy!"));
-            }
-            case 7 -> {
-                LivingEntity target = getTargetEntity(player, 12);
-                if (target == null) {
-                    return false;
-                }
-                if (data.getSpecialization() == Specialization.BLOODBENDING) {
-                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 6));
-                    target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 100, 250));
-                    damage(player, target, 3 * waterMultiplier);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<dark_red><bold>Magia Krwi!"));
-                } else {
-                    damage(player, target, 12 * waterMultiplier);
-                    target.getWorld().spawnParticle(Particle.SPLASH, target.getLocation(), 60, 1, 1, 1, 0.2);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<aqua><bold>Wodna Furia!"));
-                }
-            }
-            default -> {
+            // 2. Cooldown 15 sekund
+            if (this.cooldownManager.isOnCooldown(player.getUniqueId(), slot)) {
                 return false;
             }
+            this.cooldownManager.setCooldown(player.getUniqueId(), slot, cooldownSecondsFor(Element.WATER, slot));
+
+            // 3. Efekt wizualny podświetlenia celu
+            target.setGlowing(true);
+            Location targetLoc = target.getLocation().getBlock().getLocation();
+            Map<Block, BlockData> originalBlocks = new HashMap<>();
+
+            // Zbiór bloków 3x3x3 wokół uderzonego bytu
+            for (int x = -1; x <= 1; x++) {
+                for (int y = 0; y <= 2; y++) {
+                    for (int z = -1; z <= 1; z++) {
+                        Block b = targetLoc.clone().add(x, y, z).getBlock();
+                        if (b.isPassable() || b.getType().isAir()) {
+                            originalBlocks.putIfAbsent(b, b.getBlockData());
+                        }
+                    }
+                }
+            }
+
+            player.sendMessage(AvatarSMP.MM.deserialize("<aqua>Lodowa Pułapka aktywowana!"));
+            Material[] iceTypes = {Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE};
+
+            new BukkitRunnable() {
+                int ticks = 0;
+
+                @Override
+                public void run() {
+                    // --- ANIMACJA ROŚNIĘCIA WODY (0-5s) ---
+                    // Warstwa 1: Stopy (y = 0) - natychmiast przy uderzeniu
+                    if (ticks == 0) {
+                        spawnWaterLayer(targetLoc, 0, originalBlocks);
+                    }
+                    // Warstwa 2: Klatka (y = 1) - po 0.3s (6 ticków)
+                    if (ticks == 6) {
+                        spawnWaterLayer(targetLoc, 1, originalBlocks);
+                    }
+                    // Warstwa 3: Głowa (y = 2) - po 0.6s (12 ticków)
+                    if (ticks == 12) {
+                        spawnWaterLayer(targetLoc, 2, originalBlocks);
+                    }
+
+                    // Unieruchomienie celu w miejscu na cały czas trwania pułapki (8 sekund = 160 ticków)
+                    if (ticks <= 160) {
+                        target.teleport(targetLoc.clone().add(0.5, 0, 0.5));
+                    }
+
+                    // --- ZAMRAŻANIE (Po 5 sekundach = 100 ticków) ---
+                    if (ticks == 100) {
+                        for (Block b : originalBlocks.keySet()) {
+                            Material randomIce = iceTypes[java.util.concurrent.ThreadLocalRandom.current().nextInt(iceTypes.length)];
+                            b.setType(randomIce, false);
+                        }
+                    }
+
+                    // --- OBRAŻENIA PODCZAS ZAMROŻENIA (Trwają przez 3 sekundy: od 100 do 160 ticków) ---
+                    if (ticks >= 100 && ticks <= 160 && ticks % 10 == 0) {
+                        damage(player, target, 1.25 * waterMultiplier);
+                    }
+
+                    ticks++;
+
+                    // --- SPRZĄTANIE (Po 8 sekundach) ---
+                    if (ticks > 160) {
+                        for (Map.Entry<Block, BlockData> entry : originalBlocks.entrySet()) {
+                            entry.getKey().setBlockData(entry.getValue(), false);
+                        }
+                        target.setGlowing(false);
+                        cancel();
+                    }
+                }
+            }.runTaskTimer(plugin, 0L, 1L);
         }
-        return true;
+        case 4 -> {
+            return new me.avatarsmp.core.skill.water.TsunamiSkill(this.plugin).execute(player, data);
+        }
+        case 5 -> HealingWatersSkill.execute(plugin, player);
+        case 6 -> IceShardsSkill.execute(plugin, player, waterMultiplier, this);
+        case 7 -> WaterSpoutSkill.execute(plugin, player, waterMultiplier, this);
+        default -> {
+            return false;
+        }
     }
+    return true;
+}
 
     private boolean earthAbility(Player player, int slot, PlayerData data) {
         switch (slot) {
@@ -740,17 +683,10 @@ private boolean waterAbility(Player player, int slot, PlayerData data) {
                 if (target == null) {
                     return false;
                 }
-                if (data.getSpecialization() == Specialization.METALBENDING) {
-                    Vector pull = player.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
-                    target.setVelocity(pull.multiply(1.8));
-                    damage(player, target, 8);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<gray><bold>Magia Metalu!"));
-                } else {
-                    damage(player, target, 14);
-                    target.getWorld().spawnParticle(Particle.BLOCK, target.getLocation(), 60, 1, 1, 1, 0.1,
-                            org.bukkit.Material.STONE.createBlockData());
-                    player.sendMessage(AvatarSMP.MM.deserialize("<green><bold>Kamienna Furia!"));
-                }
+                damage(player, target, 14);
+                target.getWorld().spawnParticle(Particle.BLOCK, target.getLocation(), 60, 1, 1, 1, 0.1,
+                        org.bukkit.Material.STONE.createBlockData());
+                player.sendMessage(AvatarSMP.MM.deserialize("<green><bold>Kamienna Furia!"));
             }
             default -> {
                 return false;
@@ -821,29 +757,17 @@ private boolean waterAbility(Player player, int slot, PlayerData data) {
                 player.sendMessage(AvatarSMP.MM.deserialize("<white>Wodospad Powietrza!"));
             }
             case 7 -> {
-                if (data.getSpecialization() == Specialization.FLIGHT) {
-                    player.setAllowFlight(true);
-                    player.setFlying(true);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<white><bold>Lot!"));
-                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                        if (player.isOnline()) {
-                            player.setFlying(false);
-                            player.setAllowFlight(false);
-                        }
-                    }, 200L);
-                } else {
-                    Location loc = player.getLocation();
-                    for (Entity entity : loc.getWorld().getNearbyEntities(loc, 8, 5, 8)) {
-                        if (entity instanceof LivingEntity living && entity != player) {
-                            living.setVelocity(living.getVelocity().add(new Vector(0, 1.8, 0)));
-                            damage(player, living, 6);
-                        }
+                Location loc = player.getLocation();
+                for (Entity entity : loc.getWorld().getNearbyEntities(loc, 8, 5, 8)) {
+                    if (entity instanceof LivingEntity living && entity != player) {
+                        living.setVelocity(living.getVelocity().add(new Vector(0, 1.8, 0)));
+                        damage(player, living, 6);
                     }
-                    loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 1);
-                    loc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, loc, 5, 1, 0.5, 1, 0);
-                    player.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.2f, 1.0f);
-                    player.sendMessage(AvatarSMP.MM.deserialize("<white><bold>Huragan!"));
                 }
+                loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 1);
+                loc.getWorld().spawnParticle(Particle.SWEEP_ATTACK, loc, 5, 1, 0.5, 1, 0);
+                player.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.2f, 1.0f);
+                player.sendMessage(AvatarSMP.MM.deserialize("<white><bold>Huragan!"));
             }
             default -> {
                 return false;

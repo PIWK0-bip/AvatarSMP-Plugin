@@ -62,7 +62,7 @@ public class AvatarCommand implements TabExecutor {
                 }
                 PlayerData data = plugin.getDataManager().getData(player.getUniqueId());
                 if (data != null) {
-                    SkillsGUI.open(player, plugin.getDataManager());
+                    SkillsGUI.open(player, plugin.getDataManager(), plugin);
                 }
                 return true;
             }

@@ -32,17 +32,14 @@ public class GUIManager implements Listener {
     }
 
     public void openMainGUI(Player player, PlayerData data) {
-        // data.getElement() zwraca obiekt typu Element, sprawdzamy czy jest null
-        if (data.getElement() == null) {
+        if (data.getElement() == null || data.getElement() == me.avatarsmp.core.Element.NONE) {
             openElementGUI(player, data);
         } else {
-            // SkillsGUI.open oczekuje DataManager
-            SkillsGUI.open(player, plugin.getDataManager());
+            SkillsGUI.open(player, this.dataManager, this.plugin);
         }
     }
 
     public void openElementGUI(Player player, PlayerData data) {
-        // ElementSelectionGUI przyjmuje tylko gracza
         ElementSelectionGUI.open(player);
     }
 
@@ -51,32 +48,113 @@ public class GUIManager implements Listener {
         BindGUI.open(player, data);
     }
 
-    public void handleBindClick(InventoryClickEvent event, BindGUI gui) {
-        event.setCancelled(true);
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
 
+        if (event.getInventory().getHolder() instanceof SkillsGUI skillsGui) {
+            handleSkillsClick(event, player, skillsGui);
+        } else if (event.getInventory().getHolder() instanceof BindGUI bindGui) {
+            handleBindClick(event, player, bindGui);
+        }
+    }
+
+    private void handleSkillsClick(InventoryClickEvent event, Player player, SkillsGUI gui) {
+        event.setCancelled(true);
+        int slot = event.getRawSlot();
+
+        if (slot == 40) {
+            openBindGUI(player, gui.getData());
+            XSound.matchXSound("UI_BUTTON_CLICK").ifPresent(sound -> sound.play(player));
+            return;
+        }
+
+        int abilityIndex = gui.abilityIndexForSlot(slot);
+        if (abilityIndex >= 0) {
+            PlayerData data = gui.getData();
+            if (data.getLevel() < AbilityRegistry.requiredLevel(abilityIndex)) {
+                player.sendActionBar(AvatarSMP.MM.deserialize("<red>Ta umiejętność jest jeszcze zablokowana."));
+                XSound.matchXSound("ENTITY_VILLAGER_NO").ifPresent(sound -> sound.play(player));
+                return;
+            }
+
+            openBindGUI(player, data);
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof BindGUI bindGui) {
+                this.pendingAbilities.put(player.getUniqueId(), abilityIndex);
+                bindGui.renderPendingState(abilityIndex);
+                notifyPendingSelection(player, data, abilityIndex);
+            }
+        }
+    }
+
+    public void handleBindClick(InventoryClickEvent event, Player player, BindGUI gui) {
+        event.setCancelled(true);
+        int slot = event.getRawSlot();
+
+        // Przycisk Reset
+        if (slot == 27) {
+            PlayerData data = gui.getData();
+            data.resetBindings();
+            this.dataManager.saveAsync(data);
+            if (this.plugin.getScoreboardManager() != null) {
+                this.plugin.getScoreboardManager().update(player);
+            }
+            openBindGUI(player, data);
+            player.sendMessage(AvatarSMP.MM.deserialize("<green>Zresetowano wszystkie bindy do wartości domyślnych!"));
+            XSound.matchXSound("BLOCK_ANVIL_USE").ifPresent(sound -> sound.play(player));
+            return;
+        }
+
+        // Przejście do Skills Overview
+        if (slot == 35) {
+            SkillsGUI.open(player, this.dataManager, this.plugin);
+            XSound.matchXSound("UI_BUTTON_CLICK").ifPresent(sound -> sound.play(player));
+            return;
+        }
+
+        // Wybór slotu klawiszem numerycznym nad przedmiotem
         if (event.getClick() == ClickType.NUMBER_KEY && gui.getPendingAbility() >= 0) {
             bind(player, event.getHotbarButton());
             return;
         }
 
-        int abilityIndex = gui.abilityIndexForSlot(event.getRawSlot());
+        int abilityIndex = gui.abilityIndexForSlot(slot);
         if (abilityIndex < 0) {
             return;
         }
+
         PlayerData data = gui.getData();
         if (data.getLevel() < AbilityRegistry.requiredLevel(abilityIndex)) {
             player.sendActionBar(AvatarSMP.MM.deserialize("<red>Ta umiejętność jest jeszcze zablokowana."));
+            XSound.matchXSound("ENTITY_VILLAGER_NO").ifPresent(sound -> sound.play(player));
             return;
         }
 
+        // Prawy-Klik: Odepnij moc
+        if (event.isRightClick()) {
+            data.bindAbility(abilityIndex, -1);
+            this.dataManager.saveAsync(data);
+            if (this.plugin.getScoreboardManager() != null) {
+                this.plugin.getScoreboardManager().update(player);
+            }
+            openBindGUI(player, data);
+            player.sendMessage(AvatarSMP.MM.deserialize("<yellow>Odpięto umiejętność <white>" + AbilityRegistry.nameFor(data.getElement(), abilityIndex) + "<yellow>."));
+            XSound.matchXSound("UI_BUTTON_CLICK").ifPresent(sound -> sound.play(player));
+            return;
+        }
+
+        // Lewy-Klik: Rozpocznij bindowanie
         this.pendingAbilities.put(player.getUniqueId(), abilityIndex);
         gui.renderPendingState(abilityIndex);
+        notifyPendingSelection(player, data, abilityIndex);
+    }
+
+    private void notifyPendingSelection(Player player, PlayerData data, int abilityIndex) {
         String abilityName = AbilityRegistry.nameFor(data.getElement(), abilityIndex);
         player.sendMessage(AvatarSMP.MM.deserialize(
-                "<aqua><bold>» <white>Wybierz slot w hotbarze <aqua>(1-9)<white>, naciskając klawisz lub wpisując numer na czacie."));
+                "<aqua><bold>  <white>Wybierz slot w hotbarze <aqua>(1-9)<white>, naciskając klawisz lub wpisując numer na czacie."));
         player.showTitle(Title.title(
                 AvatarSMP.MM.deserialize("<aqua><bold>WYBIERZ SLOT 1-9"),
                 AvatarSMP.MM.deserialize("<white>" + abilityName)));
@@ -131,6 +209,7 @@ public class GUIManager implements Listener {
         if (this.plugin.getScoreboardManager() != null) {
             this.plugin.getScoreboardManager().update(player);
         }
+
         player.closeInventory();
         player.sendMessage(AvatarSMP.MM.deserialize("<green>Przypisano <white>"
                 + AbilityRegistry.nameFor(data.getElement(), abilityIndex)

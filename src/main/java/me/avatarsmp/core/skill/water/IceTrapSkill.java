@@ -1,4 +1,4 @@
-package me.avatarsmp.core.skill;
+package me.avatarsmp.core.skill.water;
 
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.ISkill;

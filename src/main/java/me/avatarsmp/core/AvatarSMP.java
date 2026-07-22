@@ -258,7 +258,7 @@ public class AvatarSMP extends JavaPlugin implements Listener {
                         player.sendMessage(MM.deserialize("<red>Musisz najpierw wybrać swoją ścieżkę: /start"));
                         return true;
                     }
-                    SkillsGUI.open(player, this.dataManager);
+                    SkillsGUI.open(player, this.dataManager, this);
                 }
                 case "bind" -> {
                     if (!(sender instanceof Player player)) {
@@ -299,7 +299,6 @@ public class AvatarSMP extends JavaPlugin implements Listener {
                             "<gold><bold>─── Statystyki: " + target.getName() + " ───\n" +
                                     "<gray>Żywioł: <white>" + data.getElement().name() + "\n" +
                                     "<gray>Poziom: <white>" + data.getLevel() + " <gray>(XP: " + data.getXp() + "/" + this.bendingManager.xpRequiredForNextLevel(data.getLevel()) + ")\n" +
-                                    "<gray>Specjalizacja: <white>" + data.getSpecialization().name() + "\n" +
                                     "<gray>Chi zablokowane: <white>" + (data.isChiBlocked() ? "Tak" : "Nie")));
                 }
                 case "reload" -> {
@@ -415,7 +414,6 @@ public class AvatarSMP extends JavaPlugin implements Listener {
                 targetData.setElement(Element.NONE);
                 targetData.setLevel(1);
                 targetData.setXp(0);
-                targetData.setSpecialization(Specialization.NONE);
                 this.dataManager.saveAsync(targetData);
                 target.playSound(target.getLocation(), Sound.ENTITY_WITHER_BREAK_BLOCK, 1.0f, 0.7f);
                 target.getWorld().spawnParticle(Particle.LARGE_SMOKE, target.getLocation().add(0, 1, 0), 100, 1, 1, 1, 0.15);

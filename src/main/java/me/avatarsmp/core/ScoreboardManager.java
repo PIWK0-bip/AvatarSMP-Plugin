@@ -30,7 +30,6 @@ public class ScoreboardManager {
     }
 
     public void update(Player player) {
-        // 1. ZMIANA: Obsługa wyłączenia scoreboardu w config.yml
         if (!plugin.getConfig().getBoolean("scoreboard.enabled", true)) {
             remove(player.getUniqueId());
             return;
@@ -45,7 +44,6 @@ public class ScoreboardManager {
         Scoreboard board = this.boards.computeIfAbsent(player.getUniqueId(),
                 k -> Bukkit.getScoreboardManager().getNewScoreboard());
         
-        // 2. ZMIANA: Pobieranie tytułu dynamicznie z configu
         String rawTitle = plugin.getConfig().getString("scoreboard.title", "<b><color:#00e1ff>▲ AVATAR SMP ▲");
         
         Objective objective = board.getObjective("avatar");
@@ -54,7 +52,6 @@ public class ScoreboardManager {
                     AvatarSMP.MM.deserialize(rawTitle));
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         } else {
-            // Aktualizuj tytuł w locie, jeśli zmienił się w configu
             objective.displayName(AvatarSMP.MM.deserialize(rawTitle));
         }
 
@@ -83,20 +80,31 @@ public class ScoreboardManager {
 
     private List<String> buildLines(Player player, PlayerData data) {
         List<String> result = new ArrayList<>();
+        
+        // Pobieramy BendingManager, aby wyliczyć wymagane XP
+        BendingManager bendingManager = plugin.getBendingManager();
+        int reqXp = (bendingManager != null) ? bendingManager.cumulativeXpForLevel(data.getLevel() + 1) : 0;
 
         for (String line : plugin.getConfig().getStringList("scoreboard.lines")) {
-            if (line.contains("%element%")) {
-                result.add(line.replace("%element%", elementLabel(data.getElement())));
-            } else if (line.contains("%skills%")) {
+            // Sekcja umiejętności rozwija się w wiele linii
+            if (line.contains("%skills%")) {
                 appendSkillsSection(player, data, result);
-            } else {
-                result.add(line);
+                continue;
             }
+
+            // Podmieniamy wszystkie zmienne w danej linii w jednym ciągu
+            String formattedLine = line
+                    .replace("%element%", elementLabel(data.getElement()))
+                    .replace("%level%", String.valueOf(data.getLevel()))
+                    .replace("%xp%", String.valueOf(data.getXp()))
+                    .replace("%max_level%", String.valueOf(BendingManager.MAX_LEVEL))
+                    .replace("%next_xp%", String.valueOf(reqXp));
+
+            result.add(formattedLine);
         }
         return result;
     }
 
-    // 3. ZMIANA: Etykiety żywiołów pobierane z configu (z wartościami domyślnymi)
     private String elementLabel(Element element) {
         String path = "elements." + element.name() + ".display-name";
         String fallback = switch (element) {
@@ -114,7 +122,6 @@ public class ScoreboardManager {
         Scoreboard board = this.boards.remove(uuid);
         Player player = Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
-            // Bezpiecznie czyścimy scoreboard i przywracamy domyślny
             player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         }
     }

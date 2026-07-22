@@ -3,7 +3,6 @@ package me.avatarsmp.core.gui;
 import me.avatarsmp.core.AvatarSMP;
 import me.avatarsmp.core.DataManager;
 import me.avatarsmp.core.Element;
-import me.avatarsmp.core.Specialization;
 import me.avatarsmp.core.data.PlayerData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -56,33 +55,10 @@ public class GUIListener implements Listener {
             }
             player.closeInventory();
 
-        // 2. Specialization GUI
-        } else if (event.getInventory().getHolder() instanceof SpecializationGUI gui) {
-            event.setCancelled(true);
-
-            PlayerData data = this.dataManager.getData(player.getUniqueId());
-            if (data == null || data.getSpecialization() != Specialization.NONE) {
-                player.closeInventory();
-                return;
-            }
-
-            Specialization specialization = switch (gui.getElement()) {
-                case FIRE -> Specialization.LIGHTNING;
-                case WATER -> Specialization.BLOODBENDING;
-                case EARTH -> Specialization.METALBENDING;
-                case AIR -> Specialization.FLIGHT;
-                default -> Specialization.NONE;
-            };
-
-            data.setSpecialization(specialization);
-            this.dataManager.saveAsync(data);
-            
-            player.sendMessage(AvatarSMP.MM.deserialize("<light_purple><bold>Unlocked specialization: <white>" + specialization.name() + "</white>!</bold></light_purple>"));
-            player.closeInventory();
-
         // 3. Ability Binding GUI
         } else if (event.getInventory().getHolder() instanceof BindGUI gui) {
-            this.guiManager.handleBindClick(event, gui);
+            // Usunięto redundantny check 'instanceof Player' - wykorzystujemy zmienną 'player' z początku metody
+            this.guiManager.handleBindClick(event, player, gui);
         }
     }
 

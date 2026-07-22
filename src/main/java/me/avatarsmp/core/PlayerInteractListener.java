@@ -73,8 +73,8 @@ public class PlayerInteractListener implements Listener {
             this.activateSelectedSkill(player, "SHIFT");
         } else {
             // Gdy gracz puści SHIFT, wypuszczamy Tsunami jeśli było ładowane
-            if (me.avatarsmp.core.skill.TsunamiSkill.isCharging(player)) {
-                me.avatarsmp.core.skill.TsunamiSkill.release(player);
+            if (me.avatarsmp.core.skill.water.TsunamiSkill.isCharging(player)) {
+                me.avatarsmp.core.skill.water.TsunamiSkill.release(player);
             }
         }
     }

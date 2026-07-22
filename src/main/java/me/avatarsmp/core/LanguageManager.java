@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 
 public class LanguageManager {
@@ -23,45 +24,69 @@ public class LanguageManager {
     }
 
     public void reload() {
-        this.currentLang = plugin.getConfig().getString("language", "pl").toLowerCase();
+        this.currentLang = plugin.getConfig().getString("language", "en").toLowerCase();
+        File langDir = new File(plugin.getDataFolder(), "lang");
+        langDir.mkdirs();
+
+        // 1. Load selected language file (from data folder or jar defaults)
         String fileName = "messages_" + currentLang + ".yml";
         String resourcePath = "lang/" + fileName;
 
-        File langDir = new File(plugin.getDataFolder(), "lang");
-        if (!langDir.exists()) {
-            langDir.mkdirs();
-        }
-        File file = new File(langDir, fileName);
-
-        if (!file.exists()) {
+        File langFile = new File(langDir, fileName);
+        if (!langFile.exists()) {
             if (plugin.getResource(resourcePath) != null) {
                 plugin.saveResource(resourcePath, false);
             } else {
-                plugin.getLogger().warning("[LanguageManager] Brak pliku " + resourcePath + ". Wczytuję domyślny lang/messages_pl.yml");
-                if (plugin.getResource("lang/messages_pl.yml") != null) {
-                    plugin.saveResource("lang/messages_pl.yml", false);
+                plugin.getLogger().warning("[LanguageManager] Missing language file " + resourcePath + ". Falling back to English.");
+                if (plugin.getResource("lang/messages_en.yml") != null) {
+                    plugin.saveResource("lang/messages_en.yml", false);
                 }
-                file = new File(langDir, "messages_pl.yml");
+                langFile = new File(langDir, "messages_en.yml");
+                this.currentLang = "en";
             }
         }
 
-        this.messagesConfig = YamlConfiguration.loadConfiguration(file);
+        this.messagesConfig = YamlConfiguration.loadConfiguration(langFile);
 
+        // Set built-in defaults from jar
         InputStream defaultStream = plugin.getResource(resourcePath);
-        if (defaultStream == null && !resourcePath.equals("lang/messages_pl.yml")) {
-            defaultStream = plugin.getResource("lang/messages_pl.yml");
+        if (defaultStream == null) {
+            defaultStream = plugin.getResource("lang/messages_en.yml");
         }
         if (defaultStream != null) {
-            YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(defaultStream, StandardCharsets.UTF_8));
-            this.messagesConfig.setDefaults(defaultConfig);
+            this.messagesConfig.setDefaults(defaults);
+        }
+
+        // 2. Load custom overrides from data folder root (messages_custom.yml)
+        File customFile = new File(plugin.getDataFolder(), "messages_custom.yml");
+        if (!customFile.exists()) {
+            // Copy default template from jar to data folder
+            try (InputStream in = plugin.getResource("lang/messages_custom.yml")) {
+                if (in != null) {
+                    Files.copy(in, customFile.toPath());
+                    plugin.getLogger().info("[LanguageManager] Created messages_custom.yml in plugin folder. Edit it to customize messages.");
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("[LanguageManager] Could not create messages_custom.yml: " + e.getMessage());
+            }
+        }
+
+        if (customFile.exists()) {
+            YamlConfiguration customConfig = YamlConfiguration.loadConfiguration(customFile);
+            for (String key : customConfig.getKeys(true)) {
+                if (customConfig.isString(key)) {
+                    this.messagesConfig.set(key, customConfig.getString(key));
+                }
+            }
         }
     }
 
     public String getRaw(String path) {
         String msg = messagesConfig.getString(path);
         if (msg == null) {
-            return "<red>Brak wiadomości: " + path + "</red>";
+            return "<red>Missing message: " + path + "</red>";
         }
         return msg;
     }
@@ -96,5 +121,13 @@ public class LanguageManager {
             raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
         }
         return MiniMessage.miniMessage().deserialize(raw);
+    }
+
+    public String getCurrentLang() {
+        return currentLang;
+    }
+
+    public boolean isLanguageAvailable(String lang) {
+        return plugin.getResource("lang/messages_" + lang.toLowerCase() + ".yml") != null;
     }
 }
