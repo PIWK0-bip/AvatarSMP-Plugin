@@ -12,12 +12,12 @@
 
 ## ✨ Features
 
-- ** Elemental Bending:** Choose between core elements (Water, Earth, Fire, Air) with unique abilities.
-- ** Specializations:** Unlock advanced elemental masteries.
-- ** Chi Blocking Mechanics:** Neutralize opponents' bending abilities temporarily in combat.
-- ** Interactive GUIs:** Built-in graphical menus for selecting elements, specializations, and binding abilities.
-- ** Progression System:** Level up your bending with an integrated XP system.
-- ** Full Multi-Language Support:** Easily switch between languages (`messages_pl.yml`, `messages_en.yml`) with modern **Adventure MiniMessage** formatting.
+- **Elemental Bending:** Choose between core elements (Water, Earth, Fire, Air) with unique abilities.
+- **Specializations:** Unlock advanced elemental masteries.
+- **Chi Blocking Mechanics:** Neutralize opponents' bending abilities temporarily in combat.
+- **Interactive GUIs:** Built-in graphical menus for selecting elements, specializations, and binding abilities.
+- **Progression System:** Level up your bending with an integrated XP system.
+- **Full Multi-Language Support:** Easily switch between languages (`messages_pl.yml`, `messages_en.yml`) with modern **Adventure MiniMessage** formatting.
 
 ---
 
